@@ -8,9 +8,35 @@ import shutil
 import msvcrt
 import textwrap
 import time
-from tkinter import *
-import tkinter.messagebox
-from Chat_window_py import create_chat_window as window
+import tkinter as tk
+
+def handle_enter(event):
+    user_input = entry_widget.get()
+    entry_widget.delete(0, tk.END)
+    text_widget.insert(tk.END, f"> {user_input}\n")
+
+def type_text_effect(widget, text, delay=50):
+    def type_char(char_index):
+        if char_index < len(text):
+            widget.insert(tk.END, text[char_index])
+            widget.see(tk.END)
+            widget.after(delay, type_char, char_index + 1)
+
+    widget.after(0, type_char, 0)
+    
+def display_game_text(game_text):
+    text_widget.insert(tk.END, game_text + "\n")
+
+window = tk.Tk()
+window.title("Text-based Game")
+window.configure(bg="black")
+
+text_widget = tk.Text(window, bg="black", fg="white", wrap=tk.WORD)
+text_widget.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+
+entry_widget = tk.Entry(window, bg="black", fg="white")
+entry_widget.pack(padx=10, pady=10, side=tk.BOTTOM, fill=tk.X)
+entry_widget.bind("<Return>", handle_enter)
 
 green = Fore.GREEN
 red = Fore.RED
@@ -28,7 +54,7 @@ def print_error_message(message):
         print(message)
 
 
-def print_slow(message):
+def display_game_text(message):
     """
     Print a message to the terminal one character at a time, with a delay of
     0.05 seconds between each character. The function wraps long lines to fit
@@ -101,7 +127,7 @@ class Player_character:
         # print_debug_message('DEBUG:', str(list(player_weapon_type.keys())))
         weapon_choice = None
         while weapon_choice == None:
-            print_slow(
+            display_game_text(
                 f'Please select one of your weapons to attack with\n{list(player_weapon_type.keys())}')
             weapon_choice = input('\n>')
             if weapon_choice in player_weapon_type:
@@ -283,15 +309,15 @@ class Combat_loop:
         enemy_init = r.randint(1, 20) + self.enemy.enemy_dexterity
         round = 1
         player_attc_choice = None
-        print_slow(f'You are entering combat with a {self.enemy.enemy_name}')
-        print_slow(
+        display_game_text(f'You are entering combat with a {self.enemy.enemy_name}')
+        display_game_text(
             f'You roll a {player_character_init} and the {self.enemy.enemy_name} has rolled a {enemy_init}')
         if player_character_init > enemy_init:
-            print_slow(
+            display_game_text(
                 f'You are faster to react than the {self.enemy.enemy_name}, you get to go first!')
             while True:
-                print_slow(f'\nRound {round}')
-                print_slow(
+                display_game_text(f'\nRound {round}')
+                display_game_text(
                     f'{player_character.player_name} has {player_character.player_health} health and the {self.enemy.enemy_name} has {self.enemy.enemy_health} health')
                 if player_character_init > enemy_init:
                     while player_attc_choice not in ['spell', 'weapon']:
@@ -301,7 +327,7 @@ class Combat_loop:
                             enemy_damage_player_health_cost = player_character.spell_attack()
                             player_character.player_health -= enemy_damage_player_health_cost[1]
                             self.enemy.enemy_health -= enemy_damage_player_health_cost[0]
-                            print_slow(
+                            display_game_text(
                                 f'{green}You deal {enemy_damage_player_health_cost[0]} damage to the {self.enemy.enemy_name} but take {enemy_damage_player_health_cost[1]} damage as a result of using the spell{rcolour}')
 
                             if self.enemy.enemy_health <= 0:
@@ -310,7 +336,7 @@ class Combat_loop:
                                 return
                         if player_attc_choice == "weapon":
                             player_attc_damage = player_character.weapon_attack()
-                            print_slow(
+                            display_game_text(
                                 f'{green}You have done {player_attc_damage[0]} with your {player_attc_damage[1]} to the {self.enemy.enemy_name}{rcolour}')
                             self.enemy.enemy_health -= player_attc_damage[0]
                             if self.enemy.enemy_health <= 0:
@@ -324,36 +350,36 @@ class Combat_loop:
                         1, 20) + self.enemy.enemy_strength
                     if attack_choice_spell > attack_choice_weapon:
                         damage = self.enemy.spell_attack()
-                        print_slow(
+                        display_game_text(
                             f'{red}The {self.enemy.enemy_name} attacked you with {damage[2]} dealing {damage[0]} to you!\nThey also take {damage[1]} by using the spell!{rcolour}')
                         player_character.player_health -= damage[0]
                         self.enemy.enemy_health -= damage[1]
                         round += 1
                         if player_character.player_health <= 0:
-                            print_slow(
+                            display_game_text(
                                 f'{red}You have been defeated by the {self.enemy.enemy_name}, better luck next time!{rcolour}')
                             if self.enemy.enemy_health <= 0:
-                                print_slow(
+                                display_game_text(
                                     f'{green}You have defeated the {self.enemy.enemy_name} and won the fight!{rcolour}')
                                 return
                     if attack_choice_weapon > attack_choice_spell:
                         damage = self.enemy.weapon_attack()
-                        print_slow(
+                        display_game_text(
                             f'{red}The {self.enemy.enemy_name} is attacking with a {damage[1]}{rcolour}')
-                        print_slow(
+                        display_game_text(
                             f'{red}The {self.enemy.enemy_name} did {damage[0]} damage to you!{rcolour}.')
                         player_character.player_health -= damage[0]
                         round += 1
                         if player_character.player_health <= 0:
-                            print_slow(
+                            display_game_text(
                                 f'{red}You have been defeated by the {self.enemy.enemy_name}, better luck next time!{rcolour}')
                             exit
         if enemy_init > player_character_init:
             while True:
-                print_slow(f'Round {round}')
-                print_slow(
+                display_game_text(f'Round {round}')
+                display_game_text(
                     f'{player_character.player_name} has {player_character.player_health} health and the {self.enemy.enemy_name} has {self.enemy.enemy_health} health')
-                print_slow(
+                display_game_text(
                     f'{red}The {self.enemy.enemy_name} has reacted quicker than you, they go first!{rcolour}')
                 attack_choice_spell = r.randint(
                     1, 20) + self.enemy.enemy_intelligence
@@ -361,22 +387,22 @@ class Combat_loop:
                     1, 20) + self.enemy.enemy_strength
                 if attack_choice_spell > attack_choice_weapon:
                     damage = self.enemy.spell_attack()
-                    print_slow(
+                    display_game_text(
                         f'{red}The {self.enemy.enemy_name} attacked you with {damage[2]} dealing {damage[0]} to you!\nThey also take {damage[1]} by using the spell!{rcolour}')
                     player_character.player_health -= damage[0]
                     self.enemy.enemy_health -= damage[1]
                     round += 1
                     if player_character.player_health <= 0:
-                        print_slow(
+                        display_game_text(
                             f'{red}You have been defeated by the {self.enemy.enemy_name}, better luck next time!{rcolour}')
                         exit
                 if attack_choice_weapon > attack_choice_spell:
                     damage = self.enemy.weapon_attack()
-                    print_slow(
+                    display_game_text(
                         f'{red}The {self.enemy.enemy_name} attacked you with a {damage[1]} and did {damage[0]} damage!{rcolour}')
                     player_character.player_health -= damage[0]
                     if player_character.player_health <= 0:
-                        print_slow(
+                        display_game_text(
                             f'{red}You have been defeated by the {self.enemy.enemy_name}, better luck next time!{rcolour}')
                         exit
                 player_attc_choice = None
@@ -387,7 +413,7 @@ class Combat_loop:
                         enemy_damage_player_health_cost = player_character.spell_attack()
                         player_character.player_health -= enemy_damage_player_health_cost[1]
                         self.enemy.enemy_health -= enemy_damage_player_health_cost[0]
-                        print_slow(
+                        display_game_text(
                             f'{green}You deal {enemy_damage_player_health_cost[0]} damage to the {self.enemy.enemy_name} but take {enemy_damage_player_health_cost[1]} damage as a result of using the spell{rcolour}')
                         round += 1
                         if self.enemy.enemy_health <= 0:
@@ -396,7 +422,7 @@ class Combat_loop:
                             return
                     if player_attc_choice == "weapon":
                         player_attc_damage = player_character.weapon_attack()
-                        print_slow(
+                        display_game_text(
                             f'{green}You have done {player_attc_damage[0]} with your {player_attc_damage[1]} to the {self.enemy.enemy_name}{rcolour}')
                         self.enemy.enemy_health -= player_attc_damage[0]
                         round += 1
@@ -415,7 +441,7 @@ class Location:
 
     def location_change(self):
         exit_choice = None
-        print_slow('Please choose a location:')
+        display_game_text('Please choose a location:')
         i = 0
         for choice in self.exit_choices.values():
             i += 1
@@ -430,35 +456,35 @@ class Location:
             else:
                 rnum = r.randint(1, 10)
                 if rnum <= 9:
-                    print_slow("That is not a valid exit choice")
+                    display_game_text("That is not a valid exit choice")
                 else:
-                    print_slow(
+                    display_game_text(
                         "Stop trying to make new locations!.What do you think you know better than me or something?.Is my story not interesting enough for you?.")
 
     def location_choices(self):
         ldescription = locations[player_character.player_location]['description']
-        print_slow(f"{ldescription}\n")
+        display_game_text(f"{ldescription}\n")
         if locations[player_character.player_location]['enemies'] != {}:
             lenemies = locations[player_character.player_location]['enemies'].values(
             )
             lenemies = ', '.join(lenemies)
-            print_slow(
+            display_game_text(
                 f'{red}You have been attacked by {lenemies}.Prepare to fight.{rcolour}')
             fightnum = 1
             for enemy in list(self.enemies.keys()):
-                print_slow(f'Fight {fightnum}')
+                display_game_text(f'Fight {fightnum}')
                 enemy_created = Enemy.gen_random_enemy(enemy)
                 fight = Combat_loop(player_character, enemy_created)
                 fight.start_combat()
                 del self.enemies[enemy]
                 fightnum += 1
                 if locations[player_character.player_location]['enemies'] == {}:
-                    print_slow(
+                    display_game_text(
                         'You have defeated all the enemies in the area!.')
                     lchoice = None
         lchoice = None
         while lchoice == None:
-            print_slow(
+            display_game_text(
                 f'What do you want to do?.1 : Move to new location.2 : Explore current location.3 : Talk.4 : Fight enemies')
             
             lchoice = input('>')
@@ -473,44 +499,44 @@ class Location:
                 if 'explore' in locations[player_character.player_location]:
                     self.location_explore()
                 else:
-                    print_slow(
+                    display_game_text(
                         'You look around but do not see anything to investigate')
                     lchoice = None
             elif lchoice == '3':
                 if 'NPCs' in self.player_location:
                     self.location_conversation()
                 else:
-                    print_slow(
+                    display_game_text(
                         "Talking to yourself is fine.It's when you start talking back that you should worry!")
                     lchoice = None
             elif lchoice == '4':
                 if locations[player_character.player_location]['enemies'] != {}:
                     fightnum = 1
                     for enemy in list(self.enemies.keys()):
-                        print_slow(f'Fight {fightnum}')
+                        display_game_text(f'Fight {fightnum}')
                         enemy_created = Enemy.gen_random_enemy(enemy)
                         fight = Combat_loop(player_character, enemy_created)
                         fight.start_combat()
                         del self.enemies[enemy]
                         fightnum += 1
                         if locations[player_character.player_location]['enemies'] == {}:
-                            print_slow(
+                            display_game_text(
                                 'You have defeated all the enemies in the area!.')
                             lchoice = None
                 else:
-                    print_slow('There are no enemies for you to fight!.')
+                    display_game_text('There are no enemies for you to fight!.')
                     lchoice = None
             else:
                 lchoice = None
 
     def location_explore(self):
         edescription = locations[player_character.player_location]['explore']['description']
-        print_slow(edescription)
+        display_game_text(edescription)
         eloot = locations[player_character.player_location]['explore']['loot'].values(
         )
         for value in eloot:
             if isinstance(value, str):
-                print_slow(value)
+                display_game_text(value)
         self.location_choices()
 
 
@@ -788,8 +814,6 @@ enemy_info = {
 }
 
 os.system('cls')
-input('...')
-window()
+window.mainloop()
 movement = Location()
 movement.location_choices()
-t.sleep(0.5)
