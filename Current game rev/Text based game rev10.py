@@ -8,39 +8,64 @@ import shutil
 import msvcrt
 import textwrap
 import time
-import tkinter as tk
-
-def handle_enter(event):
-    user_input = entry_widget.get()
-    entry_widget.delete(0, tk.END)
-    text_widget.insert(tk.END, f"> {user_input}\n")
-
-def type_text_effect(widget, text, delay=50):
-    def type_char(char_index):
-        if char_index < len(text):
-            widget.insert(tk.END, text[char_index])
-            widget.see(tk.END)
-            widget.after(delay, type_char, char_index + 1)
-
-    widget.after(0, type_char, 0)
-    
-def display_game_text(game_text):
-    text_widget.insert(tk.END, game_text + "\n")
-
-window = tk.Tk()
-window.title("Text-based Game")
-window.configure(bg="black")
-
-text_widget = tk.Text(window, bg="black", fg="white", wrap=tk.WORD)
-text_widget.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
-
-entry_widget = tk.Entry(window, bg="black", fg="white")
-entry_widget.pack(padx=10, pady=10, side=tk.BOTTOM, fill=tk.X)
-entry_widget.bind("<Return>", handle_enter)
+import customtkinter as ctk
 
 green = Fore.GREEN
 red = Fore.RED
 rcolour = Style.RESET_ALL
+
+
+class Message_box:
+    def __init__(self, system_input, title, journal_entries):
+        self.system_input = system_input
+        self.title = title
+        self.journal_entries = journal_entries
+
+        ctk.set_appearance_mode('dark')
+        ctk.set_default_color_theme('dark-blue')
+
+        self.root = ctk.CTk()
+        self.root.geometry('800x400')
+        self.root.title(self.title)
+        self.root.wm_attributes("-topmost", 1)
+
+        self.frame = ctk.CTkFrame(master=self.root)
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.rowconfigure(0, weight=1)
+        self.frame.pack(pady=20, padx=20, fill='both', expand=True, side='top')
+
+        self.message_area = ctk.CTkTextbox(master=self.frame)
+        self.message_area.grid(row=0, column=0, sticky='nsew')
+
+        self.button_frame = ctk.CTkFrame(master=self.frame)
+        self.button_frame.grid(row=1, column=0, pady=10)
+
+        self.buttons = []
+
+        for i, entry in enumerate(self.journal_entries):
+            button_text = f"Entry {i+1}"
+            button = ctk.CTkButton(master=self.button_frame, text=button_text, command=lambda e=entry: self.display_entry(e))
+            button.grid(row=0, column=i, padx=5)
+            self.buttons.append(button)
+
+        self.message_area.insert('0.0', self.system_input)
+        self.message_area.configure(state='disabled', wrap='word')
+
+        self.close_button = ctk.CTkButton(master=self.frame, text='Close', command=self.close_window)
+        self.close_button.grid(row=2, column=0, pady=10)
+
+        self.root.mainloop()
+
+    def display_entry(self, entry):
+        self.message_area.configure(state='normal')
+        self.message_area.delete('1.0', 'end')
+        self.message_area.insert('0.0', entry)
+        self.message_area.configure(state='disabled', wrap='word')
+
+    def close_window(self):
+        self.root.destroy()
+
+
 
 
 def print_debug_message(message):
@@ -54,7 +79,7 @@ def print_error_message(message):
         print(message)
 
 
-def display_game_text(message):
+def print_slow(message):
     """
     Print a message to the terminal one character at a time, with a delay of
     0.05 seconds between each character. The function wraps long lines to fit
@@ -127,7 +152,7 @@ class Player_character:
         # print_debug_message('DEBUG:', str(list(player_weapon_type.keys())))
         weapon_choice = None
         while weapon_choice == None:
-            display_game_text(
+            print_slow(
                 f'Please select one of your weapons to attack with\n{list(player_weapon_type.keys())}')
             weapon_choice = input('\n>')
             if weapon_choice in player_weapon_type:
@@ -255,7 +280,7 @@ class Enemy:
             weapon_mod = self.enemy_dexterity
         if weapon_mod == 'charisma':
             weapon_mod = self.enemy_charisma
-        if weapon_mod == 'intelligenc':
+        if weapon_mod == 'intelligence':
             weapon_mod = self.enemy_intelligence
         damage += weapon_mod
         return damage, self.enemy_weapon
@@ -309,15 +334,15 @@ class Combat_loop:
         enemy_init = r.randint(1, 20) + self.enemy.enemy_dexterity
         round = 1
         player_attc_choice = None
-        display_game_text(f'You are entering combat with a {self.enemy.enemy_name}')
-        display_game_text(
+        print_slow(f'You are entering combat with a {self.enemy.enemy_name}')
+        print_slow(
             f'You roll a {player_character_init} and the {self.enemy.enemy_name} has rolled a {enemy_init}')
         if player_character_init > enemy_init:
-            display_game_text(
+            print_slow(
                 f'You are faster to react than the {self.enemy.enemy_name}, you get to go first!')
             while True:
-                display_game_text(f'\nRound {round}')
-                display_game_text(
+                print_slow(f'\nRound {round}')
+                print_slow(
                     f'{player_character.player_name} has {player_character.player_health} health and the {self.enemy.enemy_name} has {self.enemy.enemy_health} health')
                 if player_character_init > enemy_init:
                     while player_attc_choice not in ['spell', 'weapon']:
@@ -327,7 +352,7 @@ class Combat_loop:
                             enemy_damage_player_health_cost = player_character.spell_attack()
                             player_character.player_health -= enemy_damage_player_health_cost[1]
                             self.enemy.enemy_health -= enemy_damage_player_health_cost[0]
-                            display_game_text(
+                            print_slow(
                                 f'{green}You deal {enemy_damage_player_health_cost[0]} damage to the {self.enemy.enemy_name} but take {enemy_damage_player_health_cost[1]} damage as a result of using the spell{rcolour}')
 
                             if self.enemy.enemy_health <= 0:
@@ -336,7 +361,7 @@ class Combat_loop:
                                 return
                         if player_attc_choice == "weapon":
                             player_attc_damage = player_character.weapon_attack()
-                            display_game_text(
+                            print_slow(
                                 f'{green}You have done {player_attc_damage[0]} with your {player_attc_damage[1]} to the {self.enemy.enemy_name}{rcolour}')
                             self.enemy.enemy_health -= player_attc_damage[0]
                             if self.enemy.enemy_health <= 0:
@@ -350,59 +375,59 @@ class Combat_loop:
                         1, 20) + self.enemy.enemy_strength
                     if attack_choice_spell > attack_choice_weapon:
                         damage = self.enemy.spell_attack()
-                        display_game_text(
+                        print_slow(
                             f'{red}The {self.enemy.enemy_name} attacked you with {damage[2]} dealing {damage[0]} to you!\nThey also take {damage[1]} by using the spell!{rcolour}')
                         player_character.player_health -= damage[0]
                         self.enemy.enemy_health -= damage[1]
                         round += 1
                         if player_character.player_health <= 0:
-                            display_game_text(
+                            print_slow(
                                 f'{red}You have been defeated by the {self.enemy.enemy_name}, better luck next time!{rcolour}')
                             if self.enemy.enemy_health <= 0:
-                                display_game_text(
+                                print_slow(
                                     f'{green}You have defeated the {self.enemy.enemy_name} and won the fight!{rcolour}')
                                 return
                     if attack_choice_weapon > attack_choice_spell:
                         damage = self.enemy.weapon_attack()
-                        display_game_text(
+                        print_slow(
                             f'{red}The {self.enemy.enemy_name} is attacking with a {damage[1]}{rcolour}')
-                        display_game_text(
+                        print_slow(
                             f'{red}The {self.enemy.enemy_name} did {damage[0]} damage to you!{rcolour}.')
                         player_character.player_health -= damage[0]
                         round += 1
                         if player_character.player_health <= 0:
-                            display_game_text(
+                            print_slow(
                                 f'{red}You have been defeated by the {self.enemy.enemy_name}, better luck next time!{rcolour}')
                             exit
         if enemy_init > player_character_init:
-            while True:
-                display_game_text(f'Round {round}')
-                display_game_text(
-                    f'{player_character.player_name} has {player_character.player_health} health and the {self.enemy.enemy_name} has {self.enemy.enemy_health} health')
-                display_game_text(
+            print_slow(
                     f'{red}The {self.enemy.enemy_name} has reacted quicker than you, they go first!{rcolour}')
+            while True:
+                print_slow(f'Round {round}')
+                print_slow(
+                    f'{player_character.player_name} has {player_character.player_health} health and the {self.enemy.enemy_name} has {self.enemy.enemy_health} health')
                 attack_choice_spell = r.randint(
                     1, 20) + self.enemy.enemy_intelligence
                 attack_choice_weapon = r.randint(
                     1, 20) + self.enemy.enemy_strength
                 if attack_choice_spell > attack_choice_weapon:
                     damage = self.enemy.spell_attack()
-                    display_game_text(
+                    print_slow(
                         f'{red}The {self.enemy.enemy_name} attacked you with {damage[2]} dealing {damage[0]} to you!\nThey also take {damage[1]} by using the spell!{rcolour}')
                     player_character.player_health -= damage[0]
                     self.enemy.enemy_health -= damage[1]
                     round += 1
                     if player_character.player_health <= 0:
-                        display_game_text(
+                        print_slow(
                             f'{red}You have been defeated by the {self.enemy.enemy_name}, better luck next time!{rcolour}')
                         exit
                 if attack_choice_weapon > attack_choice_spell:
                     damage = self.enemy.weapon_attack()
-                    display_game_text(
+                    print_slow(
                         f'{red}The {self.enemy.enemy_name} attacked you with a {damage[1]} and did {damage[0]} damage!{rcolour}')
                     player_character.player_health -= damage[0]
                     if player_character.player_health <= 0:
-                        display_game_text(
+                        print_slow(
                             f'{red}You have been defeated by the {self.enemy.enemy_name}, better luck next time!{rcolour}')
                         exit
                 player_attc_choice = None
@@ -413,7 +438,7 @@ class Combat_loop:
                         enemy_damage_player_health_cost = player_character.spell_attack()
                         player_character.player_health -= enemy_damage_player_health_cost[1]
                         self.enemy.enemy_health -= enemy_damage_player_health_cost[0]
-                        display_game_text(
+                        print_slow(
                             f'{green}You deal {enemy_damage_player_health_cost[0]} damage to the {self.enemy.enemy_name} but take {enemy_damage_player_health_cost[1]} damage as a result of using the spell{rcolour}')
                         round += 1
                         if self.enemy.enemy_health <= 0:
@@ -422,7 +447,7 @@ class Combat_loop:
                             return
                     if player_attc_choice == "weapon":
                         player_attc_damage = player_character.weapon_attack()
-                        display_game_text(
+                        print_slow(
                             f'{green}You have done {player_attc_damage[0]} with your {player_attc_damage[1]} to the {self.enemy.enemy_name}{rcolour}')
                         self.enemy.enemy_health -= player_attc_damage[0]
                         round += 1
@@ -439,104 +464,117 @@ class Location:
         self.player_location = locations[player_character.player_location]
         self.enemies = locations[player_character.player_location]['enemies']
 
-    def location_change(self):
+    def location_change(self, player_location):
         exit_choice = None
-        display_game_text('Please choose a location:')
+        exit_locations = locations[player_location]['exits']
+        print_slow('Please choose a location:')
         i = 0
-        for choice in self.exit_choices.values():
+        for choice in exit_locations.values():
             i += 1
             print(i, choice)
         while exit_choice == None:
             exit_choice = input('>')
-            if exit_choice in self.exit_choices:
-                exit_choice = locations[player_character.player_location]['exits'][exit_choice]
+            if exit_choice in exit_locations:
+                exit_choice = exit_locations[exit_choice]
                 player_character.player_location = exit_choice
                 # print_debug_message(f'player_location = {exit_choice}')
-                return player_character.player_location, self.location_choices()
+                return player_character.player_location, self.player_location,self.location_choices()
             else:
                 rnum = r.randint(1, 10)
                 if rnum <= 9:
-                    display_game_text("That is not a valid exit choice")
+                    print_slow("That is not a valid exit choice")
+                    exit_choice=None
                 else:
-                    display_game_text(
+                    print_slow(
                         "Stop trying to make new locations!.What do you think you know better than me or something?.Is my story not interesting enough for you?.")
+                    exit_choice=None
 
     def location_choices(self):
         ldescription = locations[player_character.player_location]['description']
-        display_game_text(f"{ldescription}\n")
-        if locations[player_character.player_location]['enemies'] != {}:
-            lenemies = locations[player_character.player_location]['enemies'].values(
-            )
-            lenemies = ', '.join(lenemies)
-            display_game_text(
-                f'{red}You have been attacked by {lenemies}.Prepare to fight.{rcolour}')
-            fightnum = 1
-            for enemy in list(self.enemies.keys()):
-                display_game_text(f'Fight {fightnum}')
-                enemy_created = Enemy.gen_random_enemy(enemy)
-                fight = Combat_loop(player_character, enemy_created)
-                fight.start_combat()
-                del self.enemies[enemy]
-                fightnum += 1
-                if locations[player_character.player_location]['enemies'] == {}:
-                    display_game_text(
-                        'You have defeated all the enemies in the area!.')
-                    lchoice = None
+        print_slow(f"{ldescription}\n")
+        if 'enemies' in locations[player_character.player_location]:
+            if locations[player_character.player_location]['enemies'] != {}:
+                lenemies = locations[player_character.player_location]['enemies'].values(
+                )
+                lenemies = ', '.join(lenemies)
+                print_slow(
+                    f'{red}You have been attacked by {lenemies}.Prepare to fight.{rcolour}')
+                fightnum = 1
+                for enemy in list(locations[player_character.player_location]['enemies'].keys()):
+                    print_slow(f'Fight {fightnum}')
+                    enemy_created = Enemy.gen_random_enemy(enemy)
+                    fight = Combat_loop(player_character, enemy_created)
+                    fight.start_combat()
+                    del locations[player_character.player_location]['enemies'][enemy]
+                    fightnum += 1
+                    if locations[player_character.player_location]['enemies'] == {}:
+                        print_slow(
+                            'You have defeated all the enemies in the area!.')
+                        lchoice = None
+        
+        if 'player journal entry' in  locations[player_character.player_location]:
+            new_journal_entry = locations[player_character.player_location]['player journal entry']
+            entry_num = len(player_journal) + 1
+            player_journal.append(f'Entry {entry_num}: {new_journal_entry}')
+        
         lchoice = None
         while lchoice == None:
-            display_game_text(
+            print_slow(
                 f'What do you want to do?.1 : Move to new location.2 : Explore current location.3 : Talk.4 : Fight enemies')
             
             lchoice = input('>')
 
-            for keyword, command in keywords_commands.items():
-                if keyword in lchoice:
-                    command()
-                    break
             if lchoice == '1':
-                self.location_change()
+                self.location_change(player_character.player_location)
             elif lchoice == '2':
                 if 'explore' in locations[player_character.player_location]:
                     self.location_explore()
                 else:
-                    display_game_text(
+                    print_slow(
                         'You look around but do not see anything to investigate')
                     lchoice = None
             elif lchoice == '3':
                 if 'NPCs' in self.player_location:
                     self.location_conversation()
                 else:
-                    display_game_text(
+                    print_slow(
                         "Talking to yourself is fine.It's when you start talking back that you should worry!")
                     lchoice = None
             elif lchoice == '4':
                 if locations[player_character.player_location]['enemies'] != {}:
                     fightnum = 1
                     for enemy in list(self.enemies.keys()):
-                        display_game_text(f'Fight {fightnum}')
+                        print_slow(f'Fight {fightnum}')
                         enemy_created = Enemy.gen_random_enemy(enemy)
                         fight = Combat_loop(player_character, enemy_created)
                         fight.start_combat()
                         del self.enemies[enemy]
                         fightnum += 1
                         if locations[player_character.player_location]['enemies'] == {}:
-                            display_game_text(
+                            print_slow(
                                 'You have defeated all the enemies in the area!.')
                             lchoice = None
                 else:
-                    display_game_text('There are no enemies for you to fight!.')
+                    print_slow('There are no enemies for you to fight!.')
                     lchoice = None
+            elif lchoice == '5':
+                journal_info = ''
+                for entry in player_journal:
+                    journal_info += f'{entry}\n\n'
+                journal_window = Message_box(journal_info, f'{player_character.player_name} Journal', player_journal)
+                lchoice = None
             else:
                 lchoice = None
 
+
     def location_explore(self):
         edescription = locations[player_character.player_location]['explore']['description']
-        display_game_text(edescription)
+        print_slow(edescription)
         eloot = locations[player_character.player_location]['explore']['loot'].values(
         )
         for value in eloot:
             if isinstance(value, str):
-                display_game_text(value)
+                print_slow(value)
         self.location_choices()
 
 
@@ -650,39 +688,39 @@ player_weapon_skills = {
 
 enemy_weapon_type = {
     'goblin_weapons': {
-        'goblin dagger': ('goblin dagger', 'A crude attempt at a makeshift weapon. A sharpened stone with ragged cloth tied at the base for a handle', 1,  3, 'dexterity', 0, None, None,),
-        'goblin club': ('goblin club', 'A crude makeshift weapon. A large stone forced into a chunck of wood', 1, 3, 'strength', None, None,),
-        'sack of rocks': ('sack of rocks', 'A collection of smaller rocks, some covered in blood.', 1, 3, 'dexterity', 0, None, None,)
+        'goblin dagger': ('goblin dagger', 'A crude attempt at a makeshift weapon. A sharpened stone with ragged cloth tied at the base for a handle', 1,  3, 'dexterity', 0, 'None', 'None',),
+        'goblin club': ('goblin club', 'A crude makeshift weapon. A large stone forced into a chunck of wood', 1, 3, 'strength', 0, 'None', 'None',),
+        'sack of rocks': ('sack of rocks', 'A collection of smaller rocks, some covered in blood.', 1, 3, 'dexterity', 0, 'None', 'None',)
     },
     'orc_weapons': {
-        'orc axe': ('orc axe', 'A large and heavy axe, made for crushing bones and splitting shields.', 2, 6, 'strength', 50, None, None),
-        'orc mace': ('orc mace', 'A brutal weapon made of iron spikes attached to a heavy wooden handle.', 2, 6, 'strength', 50, None, None),
-        'orc spear': ('orc spear', 'A long and deadly weapon, designed for piercing through armor and enemies alike.', 2, 6, 'dexterity', 50, None, None)
+        'orc axe': ('orc axe', 'A large and heavy axe, made for crushing bones and splitting shields.', 2, 6, 'strength', 50, 'None', 'None'),
+        'orc mace': ('orc mace', 'A brutal weapon made of iron spikes attached to a heavy wooden handle.', 2, 6, 'strength', 50, 'None', 'None'),
+        'orc spear': ('orc spear', 'A long and deadly weapon, designed for piercing through armor and enemies alike.', 2, 6, 'dexterity', 50, 'None', 'None')
     },
     'undead_weapons': {
-        'bone sword': ('bone sword', 'A sword made from the bones of the undead. Its jagged edges can cause severe damage to living foes.', 2, 6, 'strength', 50, None, None),
-        'death scythe': ('death scythe', 'A grim weapon that can instantly reap the souls of those it strikes down. It is said that the scythe itself is alive.', 3, 6, 'strength', 75, None, None),
-        'necrotic staff': ('necrotic staff', 'A staff that channels the power of the undead. It can weaken the lifeforce of enemies and drain their vitality.', 2, 8, 'intelligence', 50, None, None)
+        'bone sword': ('bone sword', 'A sword made from the bones of the undead. Its jagged edges can cause severe damage to living foes.', 2, 6, 'strength', 50, 'None', 'None'),
+        'death scythe': ('death scythe', 'A grim weapon that can instantly reap the souls of those it strikes down. It is said that the scythe itself is alive.', 3, 6, 'strength', 75, 'None', 'None'),
+        'necrotic staff': ('necrotic staff', 'A staff that channels the power of the undead. It can weaken the lifeforce of enemies and drain their vitality.', 2, 8, 'intelligence', 50, 'None', 'None')
     },
     'troll_weapons': {
-        'troll hammer': ('troll hammer', 'A massive hammer, capable of smashing through solid stone with ease.', 3, 9, 'strength', 100, None, None),
-        'troll claws': ('troll claws', 'Long and razor-sharp claws, designed to shred through armor and flesh alike.', 3, 9, 'dexterity', 100, None, None),
-        'troll javelin': ('troll javelin', 'A long and heavy javelin, capable of impaling multiple enemies at once.', 3, 9, 'strength', 100, None, None)
+        'troll hammer': ('troll hammer', 'A massive hammer, capable of smashing through solid stone with ease.', 3, 9, 'strength', 100, 'None', 'None'),
+        'troll claws': ('troll claws', 'Long and razor-sharp claws, designed to shred through armor and flesh alike.', 3, 9, 'dexterity', 100, 'None', 'None'),
+        'troll javelin': ('troll javelin', 'A long and heavy javelin, capable of impaling multiple enemies at once.', 3, 9, 'strength', 100, 'None', 'None')
     },
     'magic_weapons': {
-        'fireball staff': ('fireball staff', 'A powerful staff imbued with the power of fire, capable of unleashing devastating spells.', 1, 3, 'intelligence', 75, None, None),
-        'ice shard wand': ('ice shard wand', 'A wand that creates sharp shards of ice, piercing through enemies and leaving them frozen in place.', 1, 3, 'intelligence', 75, None, None),
-        'necrotic scythe': ('necrotic scythe', 'A scythe imbued with dark magic, capable of draining the life force from enemies with each strike.', 1, 3, 'intelligence', 75, None, None)
+        'fireball staff': ('fireball staff', 'A powerful staff imbued with the power of fire, capable of unleashing devastating spells.', 1, 3, 'intelligence', 75, 'None', 'None'),
+        'ice shard wand': ('ice shard wand', 'A wand that creates sharp shards of ice, piercing through enemies and leaving them frozen in place.', 1, 3, 'intelligence', 75, 'None', 'None'),
+        'necrotic scythe': ('necrotic scythe', 'A scythe imbued with dark magic, capable of draining the life force from enemies with each strike.', 1, 3, 'intelligence', 75, 'None', 'None')
     },
     'beast_weapons': {
-        'poisonous fangs': ('poisonous fangs', 'Long and deadly fangs, capable of injecting venom into enemies and causing them to weaken.', 2, 5, 'dexterity', 25, None, None),
-        'acidic spines': ('acidic spines', 'Spiny protrusions from a beast, coated in a powerful acid that can burn through armor and flesh.', 2, 5, 'dexterity', 25, None, None),
-        'crushing tail': ('crushing tail', 'A massive and powerful tail, used by beasts to crush and maim enemies.', 2, 5, 'strength', 25, None, None)
+        'poisonous fangs': ('poisonous fangs', 'Long and deadly fangs, capable of injecting venom into enemies and causing them to weaken.', 2, 5, 'dexterity', 25, 'None', 'None'),
+        'acidic spines': ('acidic spines', 'Spiny protrusions from a beast, coated in a powerful acid that can burn through armor and flesh.', 2, 5, 'dexterity', 25, 'None', 'None'),
+        'crushing tail': ('crushing tail', 'A massive and powerful tail, used by beasts to crush and maim enemies.', 2, 5, 'strength', 25, 'None', 'None')
     },
     'holy_weapons': {
-        'divine sword': ('divine sword', 'A beautiful and powerful sword, imbued with the power of divine magic.', 2, 7, 'strength', 150, None, None),
-        'holy mace': ('holy mace', 'A weapon of pure light and energy, capable of striking down evil and undead enemies with ease.', 2, 7, 'strength', 150, None, None),
-        'holy bow': ('holy bow', 'A bow imbued with holy magic, capable of firing arrows of pure energy that smite enemies on contact.', 2, 7, 'dexterity', 150, None, None)
+        'divine sword': ('divine sword', 'A beautiful and powerful sword, imbued with the power of divine magic.', 2, 7, 'strength', 150, 'None', 'None'),
+        'holy mace': ('holy mace', 'A weapon of pure light and energy, capable of striking down evil and undead enemies with ease.', 2, 7, 'strength', 150, 'None', 'None'),
+        'holy bow': ('holy bow', 'A bow imbued with holy magic, capable of firing arrows of pure energy that smite enemies on contact.', 2, 7, 'dexterity', 150, 'None', 'None')
     }
 }
 
@@ -729,7 +767,15 @@ locations = {
         "exits": {
             "1": "goblin chase",
             "2": "starting room"
-        }
+        },
+        "player journal entry" :""" Gaint cave hub\n 
+As I stepped into the cavernous room, I couldn't help but feel a sense of awe. The room was massive, and the sound of water dripping from the ceiling echoed off the walls. As I took a moment to examine the area, I couldn't help but feel a sense of unease. Something didn't feel right.
+
+Out of the corner of my eye, I spotted a flash of green dart into the darkness. I knew I had to investigate. I drew my sword and shield, ready for whatever lay ahead. As I moved deeper into the cavern, the sound of my footsteps echoed loudly.
+
+As I drew closer to the spot where I saw the green flash, I couldn't help but feel a sense of apprehension. I knew that danger lurked in these caverns, and I needed to be cautious. My hand tightened around the hilt of my sword as I stepped closer to the darkness.
+
+Suddenly, I heard a rustling sound and a low growl. I was not alone in this cavern. I gripped my sword tightly and prepared to face whatever lay ahead."""
     },
     "goblin chase": {
         "description": "Not wanting to let the mystery figure escape you begin to chase after it.Running fast through the cave, your foot steps echoing as you go, you begin to gain ground on it.Your blood is thumping in your ears as you turn a corner and finally see the figures cornered in a deadend.You are now face to face with 3 Cave Goblins.What do you do?",
@@ -739,12 +785,27 @@ locations = {
         },
         "enemies": {
             'goblin types': 'cave goblin 1',
-            'orc types': 'orc warrior 1',
-            'undead types': 'skeleton 1'
         },
         "end_of_fight": {"goblin fight": "goblin fight"},
         "fight_loot": {},
-        "combat": True
+        "combat": True,
+        "player journal entry" :""" First kill\n 
+Today I faced my first battle against a cave goblin, and I emerged victorious. I cannot help but feel a sense of pride mixed with a tinge of sadness. It was the first time I have ever killed such a large creature, and I cannot help but reflect on the experience.
+
+As I was exploring the caverns, I heard the sound of footsteps approaching. I knew that danger was near, so I drew my sword and shield, ready for whatever lay ahead.
+
+Suddenly, a cave goblin appeared before me. It was small, but fierce, with razor-sharp teeth and beady eyes that glinted in the dim light. It lunged at me, but I was ready for it.
+
+We engaged in a quick but deadly battle. The goblin was fast, but I was able to parry its attacks with my shield and strike back with my sword. After a few minutes of intense fighting, I finally landed a fatal blow, and the goblin fell to the ground, dead.
+
+As I caught my breath and looked at the lifeless body of the goblin, I couldn't help but feel a mix of emotions. On the one hand, I was proud of myself for defeating such a formidable foe. On the other hand, I couldn't help but feel a sense of sadness at taking another creature's life.
+
+But such is the life of an adventurer. I knew that I would face many more battles like this in the future, and that I needed to be prepared to defend myself against whatever lay ahead.
+
+I gathered my wits about me and continued on my journey, knowing that I had overcome this challenge and was ready for whatever lay ahead.
+
+Until next time, Journal.""",
+
     },
     "goblin talk": {
         "description": "The goblin looks afriad and confused. 'Why are you chasing me? leave me alone!'. You are surprised by this. Do you go back to the main room?",
@@ -800,13 +861,23 @@ locations = {
     }
 }
 
+player_journal= [
+"""
+Entry 1: The worst headache\n
+I'm not entirely sure what happened to me, but I seem to have found myself in quite a predicament.The last thing I remember was going to bed, and now I'm lying on the hard, cold ground of a cave. The darkness is all-encompassing, and the only sound is that of dripping water echoing around me. 
+    
+I fumble around in my bag, hoping to find something useful. My hand brushes against a flashlight, and I breathe a sigh of relief. I turn it on, and the flame flickers to life, casting a dim light around me. The cave is vast and seems to go on forever. I try to remember how I got here, but my mind draws a blank. Was I kidnapped? Did I wander here on my own? I simply cannot recall. All I know is that I need to find my way out of this cave and back to civilization.
+
+I will keep you updated, Journal, as I continue to navigate this unknown terrain. For now, I'll keep moving forward, one step at a time.
+"""
+]
+
 
 player_character = Player_character(
     'Ed', 100, None, 5, 5, 5, 5, 5, 5, 5, 5, 5, None, None)
 # print(str(player_character))
 # print(player_character.weapon_attack())
 # print(player_character.spell_attack())
-enemies = []
 
 enemy_info = {
     "cave goblin": ("cave goblin", 'A small greyish creature, half the height of the average man. It could be mistaken for child if it wasnt for the large pointed ears and sharp fang like teeth', r.randint(4, 6), r.randint(0, 1), r.randint(0, 1), r.randint(0, 1), r.randint(-1, 0), r.randint(0, 1), r.randint(-2, 0), r.choice(list(enemy_weapon_type["goblin_weapons"].keys())), r.randint(0, 3), 50),
@@ -814,6 +885,5 @@ enemy_info = {
 }
 
 os.system('cls')
-window.mainloop()
 movement = Location()
 movement.location_choices()
