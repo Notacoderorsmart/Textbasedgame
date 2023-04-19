@@ -1,0 +1,4 @@
+enemy_name,enemy_health,enemy_min_damage,enemy_max_damage,enemy_strength,enemy_endurance,enemy_dexterity,enemy_intelligence,enemy_wisdom,enemy_charisma,enemy_gold,enemy_armour,enemy_ex_points,enemy_loot_drop
+cave goblin,5,1,4,0,0,1,-2,-2,-2,5,0,20,None
+forrest goblin,8,1,4,0,0,1,-2,-2,-2,5,0,20,None
+wolf,8,1,6,2,1,2,-4,-4,0,0,1,25,None
