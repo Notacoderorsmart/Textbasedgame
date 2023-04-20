@@ -2,11 +2,8 @@ import random as r
 from colorama import Fore, Style
 import colorama as c
 import time as t
-import sys
 import os
-import shutil
 import msvcrt
-import textwrap
 import time
 import customtkinter as ctk
 
@@ -14,58 +11,83 @@ green = Fore.GREEN
 red = Fore.RED
 rcolour = Style.RESET_ALL
 
+ 
+"""This class represents a message box with a title and a journal of entries. It uses the CTk library for creating the GUI.
 
+    Attributes:
+    system_input (str): The message to be displayed in the message area.
+    title (str): The title of the message box.
+    journal_entries (list): A list of journal entries to be displayed in the buttons.
+
+    Methods:
+    init(self, system_input, title, journal_entries): Initializes the message box and creates the GUI.
+    display_entry(self, entry): Displays the selected entry in the message area.
+    close_window(self): Destroys the message box GUI.
+
+    Usage:
+    To use this class, create an instance of it with the necessary parameters, and then call the mainloop() method on it to display the message box.
+    You can then select journal entries to display by clicking on the corresponding buttons.
+"""
 class Message_box:
     def __init__(self, system_input, title, journal_entries):
         self.system_input = system_input
         self.title = title
         self.journal_entries = journal_entries
 
+        # Set the appearance mode and color theme for the CTk library
         ctk.set_appearance_mode('dark')
         ctk.set_default_color_theme('dark-blue')
 
+        # Create a new CTk window and configure its properties
         self.root = ctk.CTk()
         self.root.geometry('800x400')
         self.root.title(self.title)
         self.root.wm_attributes("-topmost", 1)
 
+        # Create a frame within the window and configure its properties
         self.frame = ctk.CTkFrame(master=self.root)
         self.frame.columnconfigure(0, weight=1)
         self.frame.rowconfigure(0, weight=1)
         self.frame.pack(pady=20, padx=20, fill='both', expand=True, side='top')
 
+        # Create a text box for displaying messages and configure its properties
         self.message_area = ctk.CTkTextbox(master=self.frame)
         self.message_area.grid(row=0, column=0, sticky='nsew')
 
+        # Create a frame for the journal entry buttons and configure its properties
         self.button_frame = ctk.CTkFrame(master=self.frame)
         self.button_frame.grid(row=1, column=0, pady=10)
 
+        # Create buttons for each journal entry and add them to the button frame
         self.buttons = []
-
+        # Create a button with the entry's text and a command to display that entry
         for i, entry in enumerate(self.journal_entries):
             button_text = f"Entry {i+1}"
             button = ctk.CTkButton(master=self.button_frame, text=button_text, command=lambda e=entry: self.display_entry(e))
             button.grid(row=0, column=i, padx=5)
             self.buttons.append(button)
-
+            
+        # Insert the system input message into the message area
         self.message_area.insert('0.0', self.system_input)
         self.message_area.configure(state='disabled', wrap='word')
 
+        # Create a close button and add it to the frame
         self.close_button = ctk.CTkButton(master=self.frame, text='Close', command=self.close_window)
         self.close_button.grid(row=2, column=0, pady=10)
 
+        # Start the main loop for the CTk window
         self.root.mainloop()
 
+    # Display the selected journal entry in the message area
     def display_entry(self, entry):
         self.message_area.configure(state='normal')
         self.message_area.delete('1.0', 'end')
         self.message_area.insert('0.0', entry)
         self.message_area.configure(state='disabled', wrap='word')
 
+    # Destroy the CTk window
     def close_window(self):
         self.root.destroy()
-
-
 
 
 def print_debug_message(message):
@@ -92,23 +114,37 @@ def print_slow(message):
     Returns: None
     """
     # Print message
-    terminal_width = shutil.get_terminal_size((80, 20)).columns
+    # Check if the message is a dictionary
     if isinstance(message, dict):
+        # If it is, join the dictionary keys into a single string
         message = ''.join(message)
+
+    # Split the message into sentences using the period as the delimiter
     sentences = message.split('.')
+
+    # Initialize the stop flag and time delay
     stop = False
-    printed_chars = 0  # Track characters printed after last newline
-    line_count = 0
     t = 0.05
+
+    # Iterate through each sentence in the list of sentences
     for sentence in sentences:
+        # Iterate through each character in the current sentence
         for char in sentence:
+            # Print the character without a newline and flush the output buffer
             print(char, end='', flush=True)
+            # Increment the printed characters counter
             printed_chars += 1
+            # Sleep for the specified time delay
             time.sleep(t)
+            # Check if a key was pressed
             if msvcrt.kbhit():
+                # If a key was pressed, set the stop flag to True
                 stop = True
+                # Retrieve the pressed key
                 msvcrt.getch()
+                # Set the time delay to 0
                 t = 0
+        # Print a newline character after printing all characters in the sentence
         else:
             print()
 
@@ -209,6 +245,54 @@ class Player_character:
 
 
 class Enemy:
+    """
+    A class to represent an enemy in a role-playing game.
+
+    Attributes:
+    -----------
+    enemy_name : str
+        The name of the enemy.
+    enemy_description : str
+        A description of the enemy.
+    enemy_health : int
+        The amount of health the enemy has.
+    enemy_strength : int
+        The enemy's strength attribute.
+    enemy_endurance : int
+        The enemy's endurance attribute.
+    enemy_dexterity : int
+        The enemy's dexterity attribute.
+    enemy_intelligence : int
+        The enemy's intelligence attribute.
+    enemy_wisdom : int
+        The enemy's wisdom attribute.
+    enemy_charisma : int
+        The enemy's charisma attribute.
+    enemy_weapon : str
+        The weapon the enemy is using.
+    enemy_weapon_type : str
+        The type of weapon the enemy is using (e.g. "goblin_weapons", "orc_weapons", etc.).
+    enemy_gold : int
+        The amount of gold the enemy is carrying.
+    enemy_xp : int
+        The amount of experience points the enemy is worth.
+
+    Methods:
+    --------
+    gen_random_enemy(enemy):
+        Generates a random enemy based on the given enemy type.
+
+        Parameters:
+        -----------
+        enemy : str
+            The type of enemy to generate. Valid options are "cave goblin", "forrest goblin", "Orc Warrior",
+            "Orc Shaman", "Orc Archer", "Orc Berserker", "Zombie", and "Skeleton".
+
+        Returns:
+        --------
+        enemy : Enemy
+            A new instance of the Enemy class representing the generated enemy.
+    """
     def __init__(self, enemy_name, enemy_description, enemy_health, enemy_strength, enemy_endurance, enemy_dexterity, enemy_intelligence, enemy_wisdom, enemy_charisma, enemy_weapon, enemy_weapon_type, enemy_gold, enemy_xp):
         self.enemy_name = enemy_name
         self.enemy_description = enemy_description
@@ -290,6 +374,27 @@ class Enemy:
 
 
 class Weapon:
+    """This is a Python class called Weapon that represents a weapon object in a game. Here is a breakdown of its attributes and methods:
+
+        Attributes:
+
+        weapon_name: a string representing the name of the weapon
+        weapon_description: a string representing a brief description of the weapon
+        weapon_min: an integer representing the minimum damage the weapon can inflict
+        weapon_max: an integer representing the maximum damage the weapon can inflict
+        weapon_stat_mod: an integer representing a modifier to the damage based on a player's stats
+        weapon_value: a float representing the value of the weapon
+        weapon_type: a string representing the type of weapon (e.g. sword, bow, etc.)
+        weapon_skill: a string representing the skill required to use the weapon
+        
+        Methods:
+
+        __init__(self, weapon_name, weapon_description, weapon_min, weapon_max, weapon_stat_mod, weapon_value, weapon_type, weapon_skill): the constructor method for the class, initializes the attributes of the object
+        __str__(self): a method that returns a string representation of the object
+        getatt(self): a method that prints out some of the attributes of the object
+        Overall, this class provides a way to create and store information about different types of weapons in a game.
+    """
+
     def __init__(self, weapon_name, weapon_description, weapon_min, weapon_max, weapon_stat_mod, weapon_value, weapon_type, weapon_skill):
         self.weapon_name = weapon_name
         self.weapon_description = weapon_description
@@ -310,8 +415,28 @@ class Weapon:
         weapon_stat_mod = self.weapon_stat_mod
         print(weapon_name, weapon_min, weapon_max, weapon_stat_mod)
 
-
 class Spell:
+    """
+    Represents a magical spell that can be used to deal damage to enemies.
+
+    Attributes:
+    -----------
+    spell_name : str
+        The name of the spell.
+    spell_description : str
+        A brief description of the spell.
+    spell_damage : int
+        The amount of damage that the spell can deal.
+    spell_stat_mod : str
+        The statistic that the spell's damage is based on (e.g. "intelligence").
+    health_cost : int
+        The amount of health that the caster must sacrifice to cast the spell.
+
+    Methods:
+    --------
+    __str__() -> str
+        Returns a string representation of the spell, including its name, damage, and health cost.
+    """
     def __init__(self, spell_name, spell_description, spell_damage, spell_stat_mod, health_cost):
         self.spell_name = spell_name
         self.spell_description = spell_description
@@ -324,6 +449,22 @@ class Spell:
 
 
 class Combat_loop:
+    """
+    This class represents a combat loop in a game. It takes a player character and an enemy as inputs and initializes their
+    attributes for combat. The class has a method called start_combat that begins the combat between the player and the enemy.
+
+    Attributes:
+    ----------
+    player_character : object
+        The player character object that is participating in combat.
+    enemy : object
+        The enemy object that is participating in combat.
+
+    Methods:
+    -------
+    start_combat():
+        Begins the combat loop between the player and the enemy.
+    """
     def __init__(self, player_character, enemy):
         self.player_character = player_character
         self.enemy = enemy
@@ -520,7 +661,7 @@ class Location:
         lchoice = None
         while lchoice == None:
             print_slow(
-                f'What do you want to do?.1 : Move to new location.2 : Explore current location.3 : Talk.4 : Fight enemies')
+                f'What do you want to do?.1 : Move to new location.2 : Explore current location.3 : Talk.4 : Fight enemies.5 : Open your Journal')
             
             lchoice = input('>')
 
